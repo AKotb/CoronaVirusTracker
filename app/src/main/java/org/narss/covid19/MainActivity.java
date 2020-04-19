@@ -171,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     //----------------------------------------------------------------------------------------------
     public void clear() {
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
-//        mapFragment.getMap.clear();
+//        mapFragment.getMap().clear();
         /*if (markerPoints.size() > 1) {
             markerPoints.clear();
 
