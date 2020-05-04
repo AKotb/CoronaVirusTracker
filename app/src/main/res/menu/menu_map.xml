@@ -10,12 +10,12 @@
         android:title="@string/str_swap_stops"
         android:orderInCategory="2"
         app:showAsAction="never" />
-    <item android:id="@+id/menu_find_route"
-        android:title="@string/str_find_route"
-        android:orderInCategory="3"
-        app:showAsAction="never" />
     <item android:id="@+id/menu_show_result"
         android:title="@string/str_show_result"
+        android:orderInCategory="3"
+        app:showAsAction="never" />
+    <item android:id="@+id/menu_find_route"
+        android:title="@string/str_find_route"
         android:orderInCategory="4"
         app:showAsAction="never" />
     <item android:id="@+id/menu_clear"

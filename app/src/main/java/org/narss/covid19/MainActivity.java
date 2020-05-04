@@ -12,6 +12,8 @@ import org.narss.covid19.dbhelper.DBHelper;
 import org.narss.covid19.model.Hospital;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+
 import android.database.SQLException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -21,6 +23,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
@@ -57,6 +60,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Button closeBtn;
     private ConstraintLayout mConstraintLayout;
     Projection projection;
+    boolean addHospitals;
+    boolean addAreas;
+    boolean addLabs;
+    boolean clearMap;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +94,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         hospitalList = db.getHospitalList();
+        addHospitals = false;
+        addAreas = false;
+        addLabs = false;
+        clearMap = false;
     }
     //----------------------------------------------------------------------------------------------
     protected synchronized void buildGoogleApiClient() {
@@ -101,65 +113,75 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         UiSettings mapSettings;
         projection = googleMap.getProjection();
         mapSettings = googleMap.getUiSettings();
-        for(int i=0; i<hospitalList.size(); i++)
-        {
-            LatLng hospitalLocation = new LatLng(hospitalList.get(i).getLat(), hospitalList.get(i).getLon());
-            googleMap.addMarker(new MarkerOptions().position(hospitalLocation)
-                    .title(hospitalList.get(i).getName() + " - " + hospitalList.get(i).getGovernorate()).icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital)));
-        }
-
-        //Bahtim
-        googleMap.addPolygon(new PolygonOptions()
-                .add(new LatLng(30.137, 31.263), new LatLng(30.135, 31.27), new LatLng(30.133, 31.278), new LatLng(30.137, 31.282),
-                        new LatLng(30.139, 31.282), new LatLng(30.141, 31.278), new LatLng(30.1421, 31.275), new LatLng(30.141, 31.273)
-                        ,new LatLng(30.143, 31.264))
-                .strokeColor(Color.RED)
-                .fillColor(Color.LTGRAY)
-                .clickable(true)).setTag("Area Name: Bahtim - Al Qalyubia Governorate\n" +
-                                        "Quarantine Start Date: 8-4-2020\n" +
-                                        "Quarantine End Date: 5-5-2020\n");
-
-        //El-Hayatim
-        googleMap.addPolygon(new PolygonOptions()
-                .add(new LatLng(30.917407, 31.112357), new LatLng(30.917959, 31.108967), new LatLng(30.920168, 31.107078), new LatLng(30.922413, 31.090296),new LatLng(30.904261, 31.091973),
-                        new LatLng(30.903525, 31.100985), new LatLng(30.901095, 31.101243), new LatLng(30.900948, 31.103431),new LatLng(30.903268, 31.105577), new LatLng(30.909675, 31.105147),
-                        new LatLng(30.910485, 31.111327), new LatLng(30.917407, 31.112357))
-                .strokeColor(Color.RED)
-                .fillColor(Color.LTGRAY)
-                .clickable(true)).setTag("Area Name: El-Hayatim - Al Gharbia Governorate\n" +
-                                        "Quarantine Start Date: 6-4-2020\n" +
-                                        "Quarantine End Date: 3-5-2020\n");
-
-        //Moatamedia
-        googleMap.addPolygon(new PolygonOptions()
-                .add(new LatLng(30.059543, 31.190027), new LatLng(30.063242, 31.170409), new LatLng(30.056042, 31.169868), new LatLng(30.056096, 31.167575),
-                        new LatLng(30.050738,31.166553), new LatLng(30.044043, 31.165115), new LatLng(30.040181, 31.171765), new LatLng(30.046858, 31.177060)
-                        ,new LatLng(30.050612, 31.177873),new LatLng(30.051911, 31.183189),new LatLng(30.046028, 31.188421),new LatLng(30.044007, 31.192278)
-                        ,new LatLng(30.044458, 31.193446),new LatLng(30.059543, 31.190027))
-                .strokeColor(Color.RED)
-                .fillColor(Color.LTGRAY)
-                .clickable(true)).setTag("Area Name: Moatamedia - Al Giza Governorate\n" +
-                                        "Quarantine Start Date: 13-4-2020\n" +
-                                        "Quarantine End Date: 10-5-2020\n");
-
-        //Shobra Elbahow
-        googleMap.addPolygon(new PolygonOptions()
-                .add(new LatLng(30.963856, 31.348804), new LatLng(30.962583, 31.34708), new LatLng(30.959262, 31.347823), new LatLng(30.957465, 31.340715),
-                        new LatLng(30.949028,31.335306), new LatLng(30.948209, 31.344932), new LatLng(30.954009, 31.355487),
-                        new LatLng(30.96231, 31.353471), new LatLng(30.963856,31.348804))
-                .strokeColor(Color.RED)
-                .fillColor(Color.LTGRAY)
-                .clickable(true)).setTag("Area Name: Shobra El-bahow - Al Dakahlia Governorate\n" +
-                                        "Quarantine Start Date: 16-4-2020\n" +
-                                        "Quarantine End Date: 13-5-2020\n");
 
         googleMap.setOnPolygonClickListener(this);
-
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(26.8206, 30.8025), 6));
         googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         googleMap.setTrafficEnabled(true);
         mapSettings.setZoomControlsEnabled(true);
         mapSettings.setMyLocationButtonEnabled(true);
+
+        if(addHospitals)
+        {
+            for(int i=0; i<hospitalList.size(); i++)
+            {
+                LatLng hospitalLocation = new LatLng(hospitalList.get(i).getLat(), hospitalList.get(i).getLon());
+                googleMap.addMarker(new MarkerOptions().position(hospitalLocation)
+                        .title(hospitalList.get(i).getName() + " - " + hospitalList.get(i).getGovernorate()).icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital)));
+            }
+        }
+
+        if(addAreas)
+        {
+            //Bahtim
+            googleMap.addPolygon(new PolygonOptions()
+                    .add(new LatLng(30.137, 31.263), new LatLng(30.135, 31.27), new LatLng(30.133, 31.278), new LatLng(30.137, 31.282),
+                            new LatLng(30.139, 31.282), new LatLng(30.141, 31.278), new LatLng(30.1421, 31.275), new LatLng(30.141, 31.273)
+                            , new LatLng(30.143, 31.264))
+                    .strokeColor(Color.RED)
+                    .fillColor(Color.LTGRAY)
+                    .clickable(true)).setTag("Area Name: Bahtim - Al Qalyubia Governorate\n" +
+                    "Quarantine Start Date: 8-4-2020\n" +
+                    "Quarantine End Date: 5-5-2020\n");
+
+            //El-Hayatim
+            googleMap.addPolygon(new PolygonOptions()
+                    .add(new LatLng(30.917407, 31.112357), new LatLng(30.917959, 31.108967), new LatLng(30.920168, 31.107078), new LatLng(30.922413, 31.090296), new LatLng(30.904261, 31.091973),
+                            new LatLng(30.903525, 31.100985), new LatLng(30.901095, 31.101243), new LatLng(30.900948, 31.103431), new LatLng(30.903268, 31.105577), new LatLng(30.909675, 31.105147),
+                            new LatLng(30.910485, 31.111327), new LatLng(30.917407, 31.112357))
+                    .strokeColor(Color.RED)
+                    .fillColor(Color.LTGRAY)
+                    .clickable(true)).setTag("Area Name: El-Hayatim - Al Gharbia Governorate\n" +
+                    "Quarantine Start Date: 6-4-2020\n" +
+                    "Quarantine End Date: 3-5-2020\n");
+
+            //Moatamedia
+            googleMap.addPolygon(new PolygonOptions()
+                    .add(new LatLng(30.059543, 31.190027), new LatLng(30.063242, 31.170409), new LatLng(30.056042, 31.169868), new LatLng(30.056096, 31.167575),
+                            new LatLng(30.050738, 31.166553), new LatLng(30.044043, 31.165115), new LatLng(30.040181, 31.171765), new LatLng(30.046858, 31.177060)
+                            , new LatLng(30.050612, 31.177873), new LatLng(30.051911, 31.183189), new LatLng(30.046028, 31.188421), new LatLng(30.044007, 31.192278)
+                            , new LatLng(30.044458, 31.193446), new LatLng(30.059543, 31.190027))
+                    .strokeColor(Color.RED)
+                    .fillColor(Color.LTGRAY)
+                    .clickable(true)).setTag("Area Name: Moatamedia - Al Giza Governorate\n" +
+                    "Quarantine Start Date: 13-4-2020\n" +
+                    "Quarantine End Date: 10-5-2020\n");
+
+            //Shobra Elbahow
+            googleMap.addPolygon(new PolygonOptions()
+                    .add(new LatLng(30.963856, 31.348804), new LatLng(30.962583, 31.34708), new LatLng(30.959262, 31.347823), new LatLng(30.957465, 31.340715),
+                            new LatLng(30.949028, 31.335306), new LatLng(30.948209, 31.344932), new LatLng(30.954009, 31.355487),
+                            new LatLng(30.96231, 31.353471), new LatLng(30.963856, 31.348804))
+                    .strokeColor(Color.RED)
+                    .fillColor(Color.LTGRAY)
+                    .clickable(true)).setTag("Area Name: Shobra El-bahow - Al Dakahlia Governorate\n" +
+                    "Quarantine Start Date: 16-4-2020\n" +
+                    "Quarantine End Date: 13-5-2020\n");
+        }
+        if(clearMap)
+        {
+            googleMap.clear();
+        }
     }
     //----------------------------------------------------------------------------------------------
     @Override
@@ -193,16 +215,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // as you specify a parent activity in AndroidManifest.xml.
         switch (item.getItemId()) {
             case R.id.menu_add_stops:
-                //addStops();
+                addQuarantineHospitals();
                 return true;
             case R.id.menu_swap_stops:
-                //swap();
+                addQuarantinedAreas();
                 return true;
             case R.id.menu_find_route:
                 //getDistanceTo();
                 return true;
             case R.id.menu_show_result:
-                //showResults();
+                //addCentralLabs();
                 return true;
             case R.id.menu_clear:
                 clear();
@@ -213,18 +235,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     //----------------------------------------------------------------------------------------------
     public void clear() {
+        clearMap = true;
+        addHospitals = false;
+        addAreas = false;
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
-//        mapFragment.getMap().clear();
-        /*if (markerPoints.size() > 1) {
-            markerPoints.clear();
-
-        }
-        fromSpinner.setSelection(0);
-        toSpinner.setSelection(0);
-        results = "";
-        details = "";*/
+        mapFragment.getMapAsync(this);
     }
-
+    //----------------------------------------------------------------------------------------------
+    public void addQuarantineHospitals(){
+        clearMap = false;
+        addHospitals = true;
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+    //----------------------------------------------------------------------------------------------
+    public void addQuarantinedAreas(){
+        clearMap = false;
+        addAreas = true;
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+    //----------------------------------------------------------------------------------------------
     @Override
     public void onPolygonClick(Polygon polygon) {
 
