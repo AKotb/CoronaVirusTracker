@@ -10,7 +10,10 @@ import android.os.Bundle;
 
 import org.narss.covid19.dbhelper.DBHelper;
 import org.narss.covid19.model.Hospital;
+import org.narss.covid19.model.Laboratory;
+
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -64,6 +67,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     boolean addAreas;
     boolean addLabs;
     boolean clearMap;
+
+    private Number[] labIndexes;
+    private String[] labNameEn;
+    private String[] labNameAr;
+    private String[] labGov;
+    private String[] labLat;
+    private String[] labLong;
 
 
     @Override
@@ -178,6 +188,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     "Quarantine Start Date: 16-4-2020\n" +
                     "Quarantine End Date: 13-5-2020\n");
         }
+
+        if(addLabs) {
+            labIndexes = new Number[7];
+            labNameEn = new String[]{"Central Public Health Laboratories", "Alexandria Fever Hospital Laboratories", "Aswan Fever Hospital Laboratories", "Hurghada Fever Hospital Laboratories", "Zagazig Fever Hospital Laboratories", "Damanhour Fever Hospital Laboratories", "Assiut Fever Hospital Laboratories"};
+            labNameAr = new String[]{"المعامل المركزية لوزارة الصحة و التامين الصحى", "معامل مستشفى حميات الاسكندرية", "معامل مستشفى حميات أسوان", "معامل مستشفى حميات الغردقة", "معامل مستشفىحميات الزقازيق", "معامل مستشفى حميات دمنهور", "معامل مستشفى حميات أسيوط"};
+            labGov = new String[]{"Cairo", "Alexandria", "Aswan", "Red Sea", "Sharkia", "Beheira", "Assiut"};
+            labLat = new String[]{"30.041114", "31.195269", "24.07611", "27.219827", "30.573514", "31.021536", "27.175031"};
+            labLong = new String[]{"31.242038", "29.923378", "32.893007", "33.818428", "31.508143", "30.467527", "31.187907"};
+
+            ArrayList<Laboratory> laboratoryArray = new ArrayList<Laboratory>();
+            for (int index=0; index<7; index++){
+                Laboratory laboratory = new Laboratory();
+                laboratory.setLabId(index+1);
+                laboratory.setLabNameEn(labNameEn[index]);
+                laboratory.setLabNameAr(labNameAr[index]);
+                laboratory.setLabGovernorate(labGov[index]);
+                laboratory.setLabLat(labLat[index]);
+                laboratory.setLabLon(labLong[index]);
+                laboratoryArray.add(laboratory);
+            }
+
+            for(int i=0; i<laboratoryArray.size(); i++)
+            {
+                LatLng labsLocation = new LatLng(Double.parseDouble(laboratoryArray.get(i).getLabLat()), Double.parseDouble(laboratoryArray.get(i).getLabLon()));
+                googleMap.addMarker(new MarkerOptions().position(labsLocation)
+                        .title(laboratoryArray.get(i).getLabNameAr() +" - "+laboratoryArray.get(i).getLabNameEn())
+                        .snippet(laboratoryArray.get(i).getLabGovernorate())
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.lab)));
+            }
+        }
         if(clearMap)
         {
             googleMap.clear();
@@ -223,8 +263,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.menu_find_route:
                 //getDistanceTo();
                 return true;
-            case R.id.menu_show_result:
-                //addCentralLabs();
+            case R.id.menu_show_labs:
+                addCentralLabs();
                 return true;
             case R.id.menu_clear:
                 clear();
@@ -252,6 +292,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void addQuarantinedAreas(){
         clearMap = false;
         addAreas = true;
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+    //----------------------------------------------------------------------------------------------
+    public void addCentralLabs(){
+        clearMap = false;
+        addLabs = true;
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }

@@ -10,8 +10,8 @@
         android:title="@string/str_swap_stops"
         android:orderInCategory="2"
         app:showAsAction="never" />
-    <item android:id="@+id/menu_show_result"
-        android:title="@string/str_show_result"
+    <item android:id="@+id/menu_show_labs"
+        android:title="@string/str_show_labs"
         android:orderInCategory="3"
         app:showAsAction="never" />
     <item android:id="@+id/menu_find_route"

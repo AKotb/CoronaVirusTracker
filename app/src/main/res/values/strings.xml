@@ -3,7 +3,7 @@
     <string name="hello_world">Corona Virus Tracker</string>
     <string name="action_settings">Settings</string>
     <string name="str_add_stops">Add Quarantine Hospitals</string>
-    <string name="str_show_result">Add Central Labs</string>
+    <string name="str_show_labs">Central Laboratories</string>
     <string name="str_clear">Clear Map</string>
     <string name="str_swap_stops">Add Quarantined Areas</string>
     <string name="str_btn_ok">OK</string>
