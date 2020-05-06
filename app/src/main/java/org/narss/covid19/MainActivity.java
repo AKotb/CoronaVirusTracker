@@ -131,13 +131,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapSettings.setZoomControlsEnabled(true);
         mapSettings.setMyLocationButtonEnabled(true);
 
+        MyCustomClusterItemInfoView markerWindowView = new MyCustomClusterItemInfoView();
+        googleMap.setInfoWindowAdapter(markerWindowView);
+
         if(addHospitals)
         {
             for(int i=0; i<hospitalList.size(); i++)
             {
                 LatLng hospitalLocation = new LatLng(hospitalList.get(i).getLat(), hospitalList.get(i).getLon());
                 googleMap.addMarker(new MarkerOptions().position(hospitalLocation)
-                        .title(hospitalList.get(i).getName() + " - " + hospitalList.get(i).getGovernorate()).icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital)));
+                        .title("بيانات المستشفي")
+                        .snippet("اسم المستشفي :  " + hospitalList.get(i).getNameAr() + " \n" +
+                                "المحافظة:  " + hospitalList.get(i).getGovernorateAr() + " \n" +
+                                "عدد الأسرة: " + hospitalList.get(i).getBeds() + " سرير" + " \n" +
+                                "عدد وحدات العناية المركزة: " + hospitalList.get(i).getIcus() + " وحدة" + " \n" +
+                                "منافذ التهوية: " + hospitalList.get(i).getVentilators() + "\n" +
+                                "عدد الأطباء: " + hospitalList.get(i).getDoctors() + " طبيب" + "\n" +
+                                "عدد هيئة التمريض: " + hospitalList.get(i).getNurssingStaff() + " ممرض وممرضة" + "\n" +
+                                "اجمالي الإصابات: " + hospitalList.get(i).getTotalCases() + " حالة" + "\n" +
+                                "الحلات النشطة: " + hospitalList.get(i).getActiveCases() + " حالة" + "\n" +
+                                "الحالات البسيطة: " + hospitalList.get(i).getMildCases() + " حالة" + "\n" +
+                                "الحالات الحرجة: " + hospitalList.get(i).getCriticalCases() + " حالة" + "\n" +
+                                "حالات تحولت نتيجتها من إيجابية الي سلبية: " + hospitalList.get(i).getClosedCases() + " حالة" + "\n" +
+                                "حالات تم شفاؤها: " + hospitalList.get(i).getRecoveredCases() + " حالة" + "\n" +
+                                "إجمالي الوفيات: " + hospitalList.get(i).getDeathCases() + " حالة").icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital)));
             }
         }
 
@@ -334,4 +351,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mPopupWindow.showAtLocation(mConstraintLayout, Gravity.CENTER,x,y);
     }
     //----------------------------------------------------------------------------------------------
+    /*
+     * Custome InfoWindow for GoogleMap Markers
+     */
+    private class MyCustomClusterItemInfoView implements GoogleMap.InfoWindowAdapter {
+
+        private final View clusterItemView;
+        LayoutInflater layoutInflater = getLayoutInflater();
+        MyCustomClusterItemInfoView() {
+            clusterItemView = layoutInflater.inflate(R.layout.custom_infowindow, null);
+        }
+
+        @Override
+        public View getInfoWindow(Marker marker) {
+            TextView itemNameTextView = clusterItemView.findViewById(R.id.text_view);
+            TextView itemTitleTextView = clusterItemView.findViewById(R.id.text_view_tile);
+            itemTitleTextView.setText(marker.getTitle());
+            itemNameTextView.setText(marker.getSnippet());
+            return clusterItemView;
+        }
+
+        @Override
+        public View getInfoContents(Marker marker) {
+            return null;
+        }
+    }
 }
