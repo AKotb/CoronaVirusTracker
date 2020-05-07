@@ -106,11 +106,27 @@ public class DBHelper extends SQLiteOpenHelper {
         res.moveToFirst();
         while(res.isAfterLast() == false){
             Hospital hospital = new Hospital();
+            
             hospital.setId(res.getString(2));
             hospital.setName(res.getString(3));
-            hospital.setGovernorate(res.getString(4));
-            hospital.setLat(res.getDouble(5));
-            hospital.setLon(res.getDouble(6));
+            hospital.setNameAr(res.getString(4));
+            hospital.setGovernorate(res.getString(5));
+            hospital.setGovernorateAr(res.getString(6));
+            hospital.setLat(res.getDouble(7));
+            hospital.setLon(res.getDouble(8));
+            hospital.setBeds(res.getInt(10));
+            hospital.setIcus(res.getInt(11));
+            hospital.setVentilators(res.getInt(12));
+            hospital.setDoctors(res.getInt(13));
+            hospital.setNurssingStaff(res.getInt(14));
+            hospital.setTotalCases(res.getInt(15));
+            hospital.setActiveCases(res.getInt(16));
+            hospital.setMildCases(res.getInt(17));
+            hospital.setCriticalCases(res.getInt(18));
+            hospital.setClosedCases(res.getInt(19));
+            hospital.setRecoveredCases(res.getInt(20));
+            hospital.setDeathCases(res.getInt(21));
+
             hospitalList.add(hospital);
             res.moveToNext();
         }
