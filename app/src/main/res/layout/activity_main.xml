@@ -1,16 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cl"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_below="@+id/custom_tracker_window"
     tools:context=".MainActivity">
 
-    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
+        android:visibility="visible"
+        android:id="@+id/query_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/info_content_border"
+        android:weightSum="5"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/text_view_query_label"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:visibility="visible"
+            android:layout_weight="1.5"
+            android:text="@string/str_query_lable"
+            android:textSize="15sp"
+            android:gravity="center"
+            android:textColor="#315e6d"
+            />
+        <EditText
+            android:id="@+id/text_search"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:singleLine="true"
+            android:visibility="visible"
+            android:maxLength="14"
+            android:layout_weight="2.5"
+            android:background="@drawable/info_content_border"
+            android:inputType="text" />
+
+        <Button
+            android:id="@+id/btn_track"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:background="@drawable/info_content_border"
+            android:text="@string/str_btn_track"
+            android:textAllCaps="false"
+            android:layout_weight="1"
+            android:visibility="visible"
+            android:textColor="#315e6d"
+            android:textSize="20sp">
+        </Button>
+
+    </LinearLayout>
+
+    <fragment
         android:id="@+id/map"
+        android:layout_below="@+id/query_container"
+        android:name="com.google.android.gms.maps.MapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:name="com.google.android.gms.maps.MapFragment"/>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="0dp" />
+</RelativeLayout>

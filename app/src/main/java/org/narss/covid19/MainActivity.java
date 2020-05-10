@@ -4,17 +4,23 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Point;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Build;
 import android.os.Bundle;
 
 import org.narss.covid19.dbhelper.DBHelper;
+import org.narss.covid19.dbhelper.PatientTrackerDBHelper;
 import org.narss.covid19.model.Hospital;
 import org.narss.covid19.model.Laboratory;
+import org.narss.covid19.model.PatientVisitedPlace;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import android.database.SQLException;
@@ -46,8 +52,11 @@ import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.RadioButton;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,17 +65,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected GoogleApiClient mGoogleApiClient;
     DBHelper db;
+    PatientTrackerDBHelper patientDBHelper;
     public List<Hospital> hospitalList;
+    public List<PatientVisitedPlace> visitedPlacesList;
     int x = 0;
     int y = 0;
     private PopupWindow mPopupWindow;
+    private PopupWindow patientTrackerPopupWindow;
     private Button closeBtn;
-    private ConstraintLayout mConstraintLayout;
+    private RelativeLayout mRelativeLayout;
+    private RelativeLayout patientTrackerRelativeLayout;
     Projection projection;
     boolean addHospitals;
     boolean addAreas;
     boolean addLabs;
     boolean clearMap;
+    boolean trackPatient;
 
     private Number[] labIndexes;
     private String[] labNameEn;
@@ -74,7 +88,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String[] labGov;
     private String[] labLat;
     private String[] labLong;
+    private String patientId = "";
+    private Button submitbutton;
+    private EditText queryText;
+    private TextView querylable;
+    private LinearLayout queryContainer;
+    private Geocoder geocoder;
+    private List<Address> addresses;
 
+    RadioButton person1;
+    RadioButton person2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +109,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         buildGoogleApiClient();
         mGoogleApiClient.connect();
         closeBtn = (Button) findViewById(R.id.btn_close);
+        queryText = (EditText) findViewById(R.id.text_search);
+        querylable = (TextView) findViewById(R.id.text_view_query_label);
+        submitbutton = (Button) findViewById(R.id.btn_track);
+        queryContainer = (LinearLayout) findViewById(R.id.query_container);
+        queryContainer.setVisibility(View.GONE);
+        visitedPlacesList = new ArrayList<PatientVisitedPlace>();
 
         db = new DBHelper(this);
 
@@ -103,11 +132,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             throw sqle;
         }
 
+        patientDBHelper = new PatientTrackerDBHelper(this);
+
+        //Create to Database
+        try {
+            patientDBHelper.createDataBase();
+        } catch (IOException ioe) {
+            throw new Error("Unable to create database");
+        }
+
+        //Connect to Database
+        try {
+            patientDBHelper.openDataBase();
+        } catch(SQLException sqle) {
+            throw sqle;
+        }
+
+        submitbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                patientId = queryText.getText().toString();
+                plotVisitedPlaces();
+            }
+        });
+
         hospitalList = db.getHospitalList();
         addHospitals = false;
         addAreas = false;
         addLabs = false;
         clearMap = false;
+        trackPatient = false;
     }
     //----------------------------------------------------------------------------------------------
     protected synchronized void buildGoogleApiClient() {
@@ -235,6 +289,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.lab)));
             }
         }
+
+        if(trackPatient)
+        {
+            try {
+                visitedPlacesList = patientDBHelper.getVisitedPlacesList(patientId);
+            } catch(SQLException sql) {
+                Toast.makeText(this, sql.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            }
+            if(visitedPlacesList.size() == 0)
+                Toast.makeText(this, "No Patient with ID: " + patientId, Toast.LENGTH_LONG).show();
+            else{
+                    for(int i=0; i<visitedPlacesList.size(); i++)
+                    {
+                        LatLng visitedLocation = new LatLng(visitedPlacesList.get(i).getLat(), visitedPlacesList.get(i).getLon());
+                        googleMap.addMarker(new MarkerOptions().position(visitedLocation)
+                                .title("بيانات المصاب")
+                                .snippet("اليوم :  " + visitedPlacesList.get(i).getDay() + " \n" +
+                                        "الساعة:  " + visitedPlacesList.get(i).getHour() + " \n" +
+                                        "عنوان التواجد: " + translateLatLonToAddress(new LatLng(visitedPlacesList.get(i).getLat(), visitedPlacesList.get(i).getLon()))));
+                    }
+            }
+        }
+
         if(clearMap)
         {
             googleMap.clear();
@@ -286,6 +363,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.menu_clear:
                 clear();
                 return true;
+            case R.id.menu_visited_places:
+                openTrackQueryForm();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -295,6 +375,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         clearMap = true;
         addHospitals = false;
         addAreas = false;
+        trackPatient = false;
+        querylable.setVisibility(View.GONE);
+        queryText.setVisibility(View.GONE);
+        submitbutton.setVisibility(View.GONE);
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
@@ -320,6 +404,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
     }
     //----------------------------------------------------------------------------------------------
+    public void plotVisitedPlaces(){
+        trackPatient = true;
+        clearMap = false;
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+    //----------------------------------------------------------------------------------------------
     @Override
     public void onPolygonClick(Polygon polygon) {
 
@@ -328,7 +419,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 (ViewGroup) findViewById(R.id.custom_toast_container));
         TextView text = (TextView) layout.findViewById(R.id.text);
         text.setText(polygon.getTag().toString());
-        mConstraintLayout = (ConstraintLayout) findViewById(R.id.cl);
+        mRelativeLayout = (RelativeLayout) findViewById(R.id.cl);
 
         //PopupWindow(View contentView, int width, int height)
         mPopupWindow = new PopupWindow(
@@ -348,7 +439,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        mPopupWindow.showAtLocation(mConstraintLayout, Gravity.CENTER,x,y);
+        mPopupWindow.showAtLocation(mRelativeLayout, Gravity.CENTER,x,y);
+    }
+    //----------------------------------------------------------------------------------------------
+    public void openTrackQueryForm() {
+
+        queryContainer.setVisibility(View.VISIBLE);
     }
     //----------------------------------------------------------------------------------------------
     /*
@@ -375,5 +471,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         public View getInfoContents(Marker marker) {
             return null;
         }
+    }
+    //----------------------------------------------------------------------------------------------
+    public String translateLatLonToAddress(LatLng loc)
+    {
+        String fullAddress = "";
+        try {
+            geocoder = new Geocoder(this, Locale.getDefault());
+
+            addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+
+            String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+            String country = addresses.get(0).getCountryName();
+
+            fullAddress  = address+", "+country;
+        } catch (IOException ioe) {
+            Toast.makeText(this, ioe.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+        }
+        return fullAddress;
     }
 }
