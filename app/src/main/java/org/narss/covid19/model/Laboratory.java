@@ -10,21 +10,34 @@ public class Laboratory {
     private String labNameEn;
     private String labNameAr;
     private String labGovernorate;
-    private String labLat;
-    private String labLon;
+    private double labLat;
+    private double labLon;
+    private int labStartTime;
+    private int labEndTime;
+    private String labOffDays;
+    private int labDailyTestsNumber;
+    private int labTotalPerformedTests;
+    private int labNegativeTestsNumber;
+    private int labPositiveTestsNumber;
 
 
     public Laboratory() {
-
     }
 
-    public Laboratory(int labId, String labNameEn, String labNameAr, String labGovernorate, String labLat, String labLon) {
+    public Laboratory(int labId, String labNameEn, String labNameAr, String labGovernorate, double labLat, double labLon, int labStartTime, int labEndTime, String labOffDays, int labDailyTestsNumber, int labTotalPerformedTests, int labNegativeTestsNumber, int labPositiveTestsNumber) {
         this.labId = labId;
         this.labNameEn = labNameEn;
         this.labNameAr = labNameAr;
         this.labGovernorate = labGovernorate;
         this.labLat = labLat;
         this.labLon = labLon;
+        this.labStartTime = labStartTime;
+        this.labEndTime = labEndTime;
+        this.labOffDays = labOffDays;
+        this.labDailyTestsNumber = labDailyTestsNumber;
+        this.labTotalPerformedTests = labTotalPerformedTests;
+        this.labNegativeTestsNumber = labNegativeTestsNumber;
+        this.labPositiveTestsNumber = labPositiveTestsNumber;
     }
 
     public int getLabId() {
@@ -59,19 +72,75 @@ public class Laboratory {
         this.labGovernorate = labGovernorate;
     }
 
-    public String getLabLat() {
+    public double getLabLat() {
         return labLat;
     }
 
-    public void setLabLat(String labLat) {
+    public void setLabLat(double labLat) {
         this.labLat = labLat;
     }
 
-    public String getLabLon() {
+    public double getLabLon() {
         return labLon;
     }
 
-    public void setLabLon(String labLon) {
+    public void setLabLon(double labLon) {
         this.labLon = labLon;
+    }
+
+    public int getLabStartTime() {
+        return labStartTime;
+    }
+
+    public void setLabStartTime(int labStartTime) {
+        this.labStartTime = labStartTime;
+    }
+
+    public int getLabEndTime() {
+        return labEndTime;
+    }
+
+    public void setLabEndTime(int labEndTime) {
+        this.labEndTime = labEndTime;
+    }
+
+    public String getLabOffDays() {
+        return labOffDays;
+    }
+
+    public void setLabOffDays(String labOffDays) {
+        this.labOffDays = labOffDays;
+    }
+
+    public int getLabDailyTestsNumber() {
+        return labDailyTestsNumber;
+    }
+
+    public void setLabDailyTestsNumber(int labDailyTestsNumber) {
+        this.labDailyTestsNumber = labDailyTestsNumber;
+    }
+
+    public int getLabTotalPerformedTests() {
+        return labTotalPerformedTests;
+    }
+
+    public void setLabTotalPerformedTests(int labTotalPerformedTests) {
+        this.labTotalPerformedTests = labTotalPerformedTests;
+    }
+
+    public int getLabNegativeTestsNumber() {
+        return labNegativeTestsNumber;
+    }
+
+    public void setLabNegativeTestsNumber(int labNegativeTestsNumber) {
+        this.labNegativeTestsNumber = labNegativeTestsNumber;
+    }
+
+    public int getLabPositiveTestsNumber() {
+        return labPositiveTestsNumber;
+    }
+
+    public void setLabPositiveTestsNumber(int labPositiveTestsNumber) {
+        this.labPositiveTestsNumber = labPositiveTestsNumber;
     }
 }

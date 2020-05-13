@@ -11,6 +11,7 @@ import android.location.Geocoder;
 import android.os.Build;
 import android.os.Bundle;
 
+import org.narss.covid19.dbhelper.CentralLaboratoryDBHelper;
 import org.narss.covid19.dbhelper.DBHelper;
 import org.narss.covid19.dbhelper.PatientTrackerDBHelper;
 import org.narss.covid19.model.Hospital;
@@ -66,7 +67,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected GoogleApiClient mGoogleApiClient;
     DBHelper db;
     PatientTrackerDBHelper patientDBHelper;
+    CentralLaboratoryDBHelper centralLaboratoryDBHelper;
     public List<Hospital> hospitalList;
+    public List<Laboratory> laboratoriesList;
     public List<PatientVisitedPlace> visitedPlacesList;
     int x = 0;
     int y = 0;
@@ -81,13 +84,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     boolean addLabs;
     boolean clearMap;
     boolean trackPatient;
-
-    private Number[] labIndexes;
-    private String[] labNameEn;
-    private String[] labNameAr;
-    private String[] labGov;
-    private String[] labLat;
-    private String[] labLong;
     private String patientId = "";
     private Button submitbutton;
     private EditText queryText;
@@ -148,6 +144,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             throw sqle;
         }
 
+        centralLaboratoryDBHelper = new CentralLaboratoryDBHelper(this);
+
+        //Create Connection to Central Laboratories Database
+        try {
+            centralLaboratoryDBHelper.createDataBase();
+        } catch (IOException ioe) {
+            throw new Error("Unable to create database");
+        }
+
+        //Open Connection to Central Laboratories Database
+        try {
+            centralLaboratoryDBHelper.openDataBase();
+        } catch(SQLException sqle) {
+            throw sqle;
+        }
+
         submitbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -156,7 +168,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+
         hospitalList = db.getHospitalList();
+        laboratoriesList = centralLaboratoryDBHelper.getLaboratoriesList();
         addHospitals = false;
         addAreas = false;
         addLabs = false;
@@ -261,32 +275,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if(addLabs) {
-            labIndexes = new Number[7];
-            labNameEn = new String[]{"Central Public Health Laboratories", "Alexandria Fever Hospital Laboratories", "Aswan Fever Hospital Laboratories", "Hurghada Fever Hospital Laboratories", "Zagazig Fever Hospital Laboratories", "Damanhour Fever Hospital Laboratories", "Assiut Fever Hospital Laboratories"};
-            labNameAr = new String[]{"المعامل المركزية لوزارة الصحة و التامين الصحى", "معامل مستشفى حميات الاسكندرية", "معامل مستشفى حميات أسوان", "معامل مستشفى حميات الغردقة", "معامل مستشفىحميات الزقازيق", "معامل مستشفى حميات دمنهور", "معامل مستشفى حميات أسيوط"};
-            labGov = new String[]{"Cairo", "Alexandria", "Aswan", "Red Sea", "Sharkia", "Beheira", "Assiut"};
-            labLat = new String[]{"30.041114", "31.195269", "24.07611", "27.219827", "30.573514", "31.021536", "27.175031"};
-            labLong = new String[]{"31.242038", "29.923378", "32.893007", "33.818428", "31.508143", "30.467527", "31.187907"};
-
-            ArrayList<Laboratory> laboratoryArray = new ArrayList<Laboratory>();
-            for (int index=0; index<7; index++){
-                Laboratory laboratory = new Laboratory();
-                laboratory.setLabId(index+1);
-                laboratory.setLabNameEn(labNameEn[index]);
-                laboratory.setLabNameAr(labNameAr[index]);
-                laboratory.setLabGovernorate(labGov[index]);
-                laboratory.setLabLat(labLat[index]);
-                laboratory.setLabLon(labLong[index]);
-                laboratoryArray.add(laboratory);
-            }
-
-            for(int i=0; i<laboratoryArray.size(); i++)
+            for(int i=0; i<laboratoriesList.size(); i++)
             {
-                LatLng labsLocation = new LatLng(Double.parseDouble(laboratoryArray.get(i).getLabLat()), Double.parseDouble(laboratoryArray.get(i).getLabLon()));
-                googleMap.addMarker(new MarkerOptions().position(labsLocation)
-                        .title(laboratoryArray.get(i).getLabNameAr() +" - "+laboratoryArray.get(i).getLabNameEn())
-                        .snippet(laboratoryArray.get(i).getLabGovernorate())
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.lab)));
+                LatLng laboratoriesLocation = new LatLng(laboratoriesList.get(i).getLabLat(), laboratoriesList.get(i).getLabLon());
+                googleMap.addMarker(new MarkerOptions().position(laboratoriesLocation)
+                        .title("بيانات المعمل")
+                        .snippet("اسم المعمل :  " + laboratoriesList.get(i).getLabNameAr() + " \n" +
+                                "المحافظة:  " + laboratoriesList.get(i).getLabGovernorate() + " \n" +
+                                "يبدأ العمل في تمام الساعة: " + laboratoriesList.get(i).getLabStartTime() + " صباحاً" + " \n" +
+                                "يغلق في تمام الساعة: " + laboratoriesList.get(i).getLabEndTime() + " مساءً" + " \n" +
+                                "أيام العطلات: " + laboratoriesList.get(i).getLabOffDays() + "\n" +
+                                "عدد التحاليل اليومية: " + laboratoriesList.get(i).getLabDailyTestsNumber() + " تحليل" + "\n" +
+                                "إجمالي عدد التحاليل: " + laboratoriesList.get(i).getLabTotalPerformedTests() + " تحليل" + "\n" +
+                                "عدد التحاليل السلبية: " + laboratoriesList.get(i).getLabNegativeTestsNumber() + " تحليل" + "\n" +
+                                "عدد التحاليل الإيجابية: " + laboratoriesList.get(i).getLabPositiveTestsNumber() + " تحليل" ).icon(BitmapDescriptorFactory.fromResource(R.drawable.lab)));
             }
         }
 
