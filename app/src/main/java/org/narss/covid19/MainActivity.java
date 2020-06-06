@@ -176,10 +176,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 plotVisitedPlaces();
             }
         });
-
+        hospitalList = db.getHospitalList();
         haversineDistancesCopy = new float[hospitalList.size()];
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        hospitalList = db.getHospitalList();
         laboratoriesList = centralLaboratoryDBHelper.getLaboratoriesList();
         addHospitals = false;
         addAreas = false;
