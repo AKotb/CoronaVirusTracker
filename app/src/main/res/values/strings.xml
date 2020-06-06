@@ -15,7 +15,7 @@
     <string name="str_find_visited_places">Patient Visited Places</string>
     <string name="str_query_lable">Enter Patient ID:</string>
     <string name="str_btn_track">Track</string>
-
-    <string name="person1">Patient 1</string>
-    <string name="person2">Patient 2</string>
+    <string name="str_about">About</string>
+    <string name="menu_exit">Exit</string>
+    <string name="str_nearest_hospitals">Find Nearest Hospitals</string>
 </resources>

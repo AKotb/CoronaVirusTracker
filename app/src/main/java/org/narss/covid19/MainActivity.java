@@ -1,13 +1,17 @@
 package org.narss.covid19;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 
-import android.app.Dialog;
-import android.content.Intent;
-import android.graphics.Point;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -19,31 +23,31 @@ import org.narss.covid19.model.PatientVisitedPlace;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import android.database.SQLException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
-import android.util.DisplayMetrics;
-import android.util.Log;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -55,13 +59,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
-import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, GoogleMap.OnPolygonClickListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, GoogleMap.OnPolygonClickListener, LocationListener, GoogleMap.OnMyLocationClickListener {
 
     protected GoogleApiClient mGoogleApiClient;
     DBHelper db;
@@ -71,16 +75,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     int x = 0;
     int y = 0;
     private PopupWindow mPopupWindow;
-    private PopupWindow patientTrackerPopupWindow;
     private Button closeBtn;
     private RelativeLayout mRelativeLayout;
-    private RelativeLayout patientTrackerRelativeLayout;
     Projection projection;
     boolean addHospitals;
     boolean addAreas;
     boolean addLabs;
     boolean clearMap;
     boolean trackPatient;
+    boolean findNearestHospital;
+    boolean myLocationClicked;
 
     private Number[] labIndexes;
     private String[] labNameEn;
@@ -95,9 +99,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LinearLayout queryContainer;
     private Geocoder geocoder;
     private List<Address> addresses;
+    ArrayList<Laboratory> laboratoryArray;
+    private float[] haversineDistances;
+    private float[] haversineDistancesCopy;
+    private Location tempLocation;
 
-    RadioButton person1;
-    RadioButton person2;
+    protected Location myLastLocation;
+    private LocationRequest mLocationRequest;
+    FusedLocationProviderClient mFusedLocationClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,8 +121,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         queryText = (EditText) findViewById(R.id.text_search);
         querylable = (TextView) findViewById(R.id.text_view_query_label);
         submitbutton = (Button) findViewById(R.id.btn_track);
-        queryContainer = (LinearLayout) findViewById(R.id.query_container);
-        queryContainer.setVisibility(View.GONE);
         visitedPlacesList = new ArrayList<PatientVisitedPlace>();
 
         db = new DBHelper(this);
@@ -155,13 +162,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 plotVisitedPlaces();
             }
         });
-
         hospitalList = db.getHospitalList();
+        haversineDistancesCopy = new float[hospitalList.size()];
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         addHospitals = false;
         addAreas = false;
         addLabs = false;
         clearMap = false;
         trackPatient = false;
+        findNearestHospital = false;
+        myLocationClicked = false;
     }
     //----------------------------------------------------------------------------------------------
     protected synchronized void buildGoogleApiClient() {
@@ -183,10 +193,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         googleMap.setTrafficEnabled(true);
         mapSettings.setZoomControlsEnabled(true);
-        mapSettings.setMyLocationButtonEnabled(true);
+
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                buildGoogleApiClient();
+                googleMap.setMyLocationEnabled(true);
+                mapSettings.setMyLocationButtonEnabled(true);
+            }
+        }
+        else {
+            buildGoogleApiClient();
+            googleMap.setMyLocationEnabled(true);
+            mapSettings.setMyLocationButtonEnabled(true);
+        }
 
         MyCustomClusterItemInfoView markerWindowView = new MyCustomClusterItemInfoView();
         googleMap.setInfoWindowAdapter(markerWindowView);
+        googleMap.setOnMyLocationClickListener(this);
 
         if(addHospitals)
         {
@@ -268,7 +293,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             labLat = new String[]{"30.041114", "31.195269", "24.07611", "27.219827", "30.573514", "31.021536", "27.175031"};
             labLong = new String[]{"31.242038", "29.923378", "32.893007", "33.818428", "31.508143", "30.467527", "31.187907"};
 
-            ArrayList<Laboratory> laboratoryArray = new ArrayList<Laboratory>();
+            laboratoryArray = new ArrayList<Laboratory>();
             for (int index=0; index<7; index++){
                 Laboratory laboratory = new Laboratory();
                 laboratory.setLabId(index+1);
@@ -300,15 +325,55 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if(visitedPlacesList.size() == 0)
                 Toast.makeText(this, "No Patient with ID: " + patientId, Toast.LENGTH_LONG).show();
             else{
-                    for(int i=0; i<visitedPlacesList.size(); i++)
-                    {
-                        LatLng visitedLocation = new LatLng(visitedPlacesList.get(i).getLat(), visitedPlacesList.get(i).getLon());
-                        googleMap.addMarker(new MarkerOptions().position(visitedLocation)
-                                .title("بيانات المصاب")
-                                .snippet("اليوم :  " + visitedPlacesList.get(i).getDay() + " \n" +
-                                        "الساعة:  " + visitedPlacesList.get(i).getHour() + " \n" +
-                                        "عنوان التواجد: " + translateLatLonToAddress(new LatLng(visitedPlacesList.get(i).getLat(), visitedPlacesList.get(i).getLon()))));
-                    }
+                for(int i=0; i<visitedPlacesList.size(); i++)
+                {
+                    LatLng visitedLocation = new LatLng(visitedPlacesList.get(i).getLat(), visitedPlacesList.get(i).getLon());
+                    googleMap.addMarker(new MarkerOptions().position(visitedLocation)
+                            .title("بيانات المصاب")
+                            .snippet("اليوم :  " + visitedPlacesList.get(i).getDay() + " \n" +
+                                    "الساعة:  " + visitedPlacesList.get(i).getHour() + " \n" +
+                                    "عنوان التواجد: " + translateLatLonToAddress(new LatLng(visitedPlacesList.get(i).getLat(), visitedPlacesList.get(i).getLon()))));
+                }
+            }
+        }
+
+        if(findNearestHospital)
+        {
+            googleMap.clear();
+            try {
+                int firstIndex = 0;
+                int secondIndex = 0;
+                int thirdIndex = 0;
+                haversineDistancesCopy = Arrays.copyOf(haversineDistances,haversineDistances.length);
+                Arrays.sort(haversineDistancesCopy);
+                for(int y=0; y<haversineDistances.length; y++)
+                {
+                    if(haversineDistancesCopy[0] == haversineDistances[y])
+                        firstIndex = y;
+                    if(haversineDistancesCopy[1] == haversineDistances[y])
+                        secondIndex = y;
+                    if(haversineDistancesCopy[2] == haversineDistances[y])
+                        thirdIndex = y;
+                }
+                //--------------------------------
+                LatLng firstNearestHospital = new LatLng(hospitalList.get(firstIndex).getLat(), hospitalList.get(firstIndex).getLon());
+                LatLng secondNearestHospital = new LatLng(hospitalList.get(secondIndex).getLat(), hospitalList.get(secondIndex).getLon());
+                LatLng thirdNearestHospital = new LatLng(hospitalList.get(thirdIndex).getLat(), hospitalList.get(thirdIndex).getLon());
+
+                googleMap.addMarker(new MarkerOptions().position(firstNearestHospital)
+                        .title(hospitalList.get(firstIndex).getNameAr())
+                        .snippet("المسافة المباشرة من موقعك الحالي :  " + haversineDistancesCopy[0] + " كم").icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital)));
+
+                googleMap.addMarker(new MarkerOptions().position(secondNearestHospital)
+                        .title(hospitalList.get(secondIndex).getNameAr())
+                        .snippet("المسافة المباشرة من موقعك الحالي :  " + haversineDistancesCopy[1] + " كم").icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital)));
+
+                googleMap.addMarker(new MarkerOptions().position(thirdNearestHospital)
+                        .title(hospitalList.get(thirdIndex).getNameAr())
+                        .snippet("المسافة المباشرة من موقعك الحالي :  " + haversineDistancesCopy[2] + " كم").icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital)));
+
+            } catch (Exception e) {
+                Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
             }
         }
 
@@ -320,19 +385,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     //----------------------------------------------------------------------------------------------
     @Override
     public void onConnectionSuspended(int i) {
-        /*txtView = (TextView)findViewById(R.id.txt_view);
-        txtView.setText("Connection suspended");*/
         mGoogleApiClient.connect();
     }
     //----------------------------------------------------------------------------------------------
     @Override
     public void onConnected(Bundle bundle) {
+        mLocationRequest = LocationRequest.create();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        mFusedLocationClient.requestLocationUpdates(
+                mLocationRequest, new LocationCallback(),
+                Looper.myLooper()
+        );
     }
     //----------------------------------------------------------------------------------------------
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-        /*txtView = (TextView)findViewById(R.id.txt_view);
-        txtView.setText("Connection Failed");*/
     }
     //----------------------------------------------------------------------------------------------
     @Override
@@ -366,8 +436,63 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.menu_visited_places:
                 openTrackQueryForm();
                 return true;
+            case R.id.menu_find_nearest_hospitals:
+                findNearestHospitals();
+                return true;
+            case R.id.menu_exit:
+                exit();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+    //----------------------------------------------------------------------------------------------
+    public void exit()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure you want to exit?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        MainActivity.this.finish();
+                        System.exit(0);
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+    //----------------------------------------------------------------------------------------------
+    public void findNearestHospitals(){
+        tempLocation = new Location("");
+        try {
+            if(addHospitals && myLocationClicked)
+            {
+                haversineDistances = new float[hospitalList.size()];
+
+                for(int i=0; i<hospitalList.size(); i++)
+                {
+                    //The distance from my location to the each hospital in the hospitalList
+                    tempLocation.setLatitude(hospitalList.get(i).getLat());
+                    tempLocation.setLongitude(hospitalList.get(i).getLon());
+                    haversineDistances[i] =  myLastLocation.distanceTo(tempLocation) / 1000;
+                }
+                findNearestHospital = true;
+                clearMap = false;
+                MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+                mapFragment.getMapAsync(this);
+            }
+
+            else {
+                Toast.makeText(this, "Please Add Quarantine Hospitals and Set Your Current Location First", Toast.LENGTH_LONG).show();
+            }
+
+        } catch (Exception exp) {
+            Toast.makeText(this, exp.getLocalizedMessage(), Toast.LENGTH_LONG).show();
         }
     }
     //----------------------------------------------------------------------------------------------
@@ -376,9 +501,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         addHospitals = false;
         addAreas = false;
         trackPatient = false;
-        querylable.setVisibility(View.GONE);
-        queryText.setVisibility(View.GONE);
-        submitbutton.setVisibility(View.GONE);
+        addLabs = false;
+        findNearestHospital = false;
+        myLocationClicked = false;
+        queryContainer = (LinearLayout) findViewById(R.id.query_container);
+        if(queryContainer.getVisibility() == View.VISIBLE)
+            queryContainer.setVisibility(View.GONE);
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
@@ -443,9 +571,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     //----------------------------------------------------------------------------------------------
     public void openTrackQueryForm() {
-
+        queryContainer = (LinearLayout) findViewById(R.id.query_container);
         queryContainer.setVisibility(View.VISIBLE);
     }
+    //----------------------------------------------------------------------------------------------
+    @Override
+    public void onLocationChanged(Location location) {
+        myLastLocation = location;
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    @Override
+    public void onMyLocationClick(@NonNull Location location) {
+        myLastLocation = location;
+        myLocationClicked = true;
+        Toast.makeText(this, "My Location: " + myLastLocation.getLatitude() + ", " + myLastLocation.getLongitude(), Toast.LENGTH_LONG).show();
+    }
+
     //----------------------------------------------------------------------------------------------
     /*
      * Custome InfoWindow for GoogleMap Markers
