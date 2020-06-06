@@ -61,6 +61,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.text.TextUtils;
+import android.util.Patterns;
+
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, GoogleMap.OnPolygonClickListener {
 
@@ -84,6 +87,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     boolean addLabs;
     boolean clearMap;
     boolean trackPatient;
+    boolean listCautions;
+    boolean infected;
     private String patientId = "";
     private Button submitbutton;
     private EditText queryText;
@@ -175,8 +180,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         addAreas = false;
         addLabs = false;
         clearMap = false;
+        listCautions = false;
         trackPatient = false;
+        infected = false;
     }
+
     //----------------------------------------------------------------------------------------------
     protected synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -314,6 +322,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
 
+        if(listCautions)
+        {
+            System.out.println("Cautions Pressed!");
+        }
+
+        if(infected)
+        {
+            System.out.println("Infected Pressed!");
+        }
+
         if(clearMap)
         {
             googleMap.clear();
@@ -362,8 +380,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.menu_show_labs:
                 addCentralLabs();
                 return true;
+            case R.id.menu_cautions:
+                showCautions();
+                return true;
             case R.id.menu_clear:
                 clear();
+                return true;
+            case R.id.menu_infection_detection:
+                infectedOrNo();
                 return true;
             case R.id.menu_visited_places:
                 openTrackQueryForm();
@@ -378,6 +402,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         addHospitals = false;
         addAreas = false;
         trackPatient = false;
+        addLabs = false;
+        listCautions = false;
+        infected = false;
         querylable.setVisibility(View.GONE);
         queryText.setVisibility(View.GONE);
         submitbutton.setVisibility(View.GONE);
@@ -402,6 +429,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void addCentralLabs(){
         clearMap = false;
         addLabs = true;
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+    //----------------------------------------------------------------------------------------------
+    public void showCautions(){
+        clearMap = false;
+        listCautions = true;
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+    //----------------------------------------------------------------------------------------------
+    public void infectedOrNo(){
+        clearMap = false;
+        infected = true;
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
@@ -492,4 +533,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         return fullAddress;
     }
+
+    //----------------------------------------------------------------------------------------------
+    boolean isEmail(EditText text) {
+        CharSequence email = text.getText().toString();
+        return (!TextUtils.isEmpty(email) && Patterns.EMAIL_ADDRESS.matcher(email).matches());
+    }
+    //----------------------------------------------------------------------------------------------
+    boolean isEmpty(EditText text) {
+        CharSequence str = text.getText().toString();
+        return TextUtils.isEmpty(str);
+    }
+    //----------------------------------------------------------------------------------------------
 }
