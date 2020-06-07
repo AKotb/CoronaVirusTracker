@@ -26,13 +26,15 @@
         android:title="@string/str_find_route"
         android:orderInCategory="6"
         app:showAsAction="never" />
-    <item android:id="@+id/menu_clear"
-        android:title="@string/str_clear"
-        android:orderInCategory="7"
-        app:showAsAction="never" />
-    <item android:id="@+id/menu_about"
-        android:title="@string/str_about"
+    <item
+        android:id="@+id/menu_clear"
         android:orderInCategory="8"
+        android:title="@string/str_clear"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_about"
+        android:orderInCategory="7"
+        android:title="@string/str_about"
         app:showAsAction="never" />
     <item android:id="@+id/menu_exit"
         android:title="@string/menu_exit"

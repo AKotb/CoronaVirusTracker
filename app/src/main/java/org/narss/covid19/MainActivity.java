@@ -234,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             {
                 LatLng hospitalLocation = new LatLng(hospitalList.get(i).getLat(), hospitalList.get(i).getLon());
                 googleMap.addMarker(new MarkerOptions().position(hospitalLocation)
-                        .title("بيانات المستشفي")
+                        .title("بيانات المستشفى")
                         .snippet("اسم المستشفي :  " + hospitalList.get(i).getNameAr() + " \n" +
                                 "المحافظة:  " + hospitalList.get(i).getGovernorateAr() + " \n" +
                                 "عدد الأسرة: " + hospitalList.get(i).getBeds() + " سرير" + " \n" +
@@ -261,9 +261,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             , new LatLng(30.143, 31.264))
                     .strokeColor(Color.RED)
                     .fillColor(Color.LTGRAY)
-                    .clickable(true)).setTag("Area Name: Bahtim - Al Qalyubia Governorate\n" +
-                    "Quarantine Start Date: 8-4-2020\n" +
-                    "Quarantine End Date: 5-5-2020\n");
+                    .clickable(true)).setTag("اسم المنطقة: بهتيم - محافظة القليوبية \n" +
+                    "تاريخ بداية العزل: 8-4-2020\n" +
+                    "تاريخ انتهاء العزل: 5-5-2020\n");
 
             //El-Hayatim
             googleMap.addPolygon(new PolygonOptions()
@@ -272,9 +272,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             new LatLng(30.910485, 31.111327), new LatLng(30.917407, 31.112357))
                     .strokeColor(Color.RED)
                     .fillColor(Color.LTGRAY)
-                    .clickable(true)).setTag("Area Name: El-Hayatim - Al Gharbia Governorate\n" +
-                    "Quarantine Start Date: 6-4-2020\n" +
-                    "Quarantine End Date: 3-5-2020\n");
+                    .clickable(true)).setTag("اسم المنطقة: الهياتم - محافظة الغربية \n" +
+                    "تاريخ بداية العزل: 6-4-2020\n" +
+                    "تاريخ انتهاء العزل: 3-5-2020\n");
 
             //Moatamedia
             googleMap.addPolygon(new PolygonOptions()
@@ -284,9 +284,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             , new LatLng(30.044458, 31.193446), new LatLng(30.059543, 31.190027))
                     .strokeColor(Color.RED)
                     .fillColor(Color.LTGRAY)
-                    .clickable(true)).setTag("Area Name: Moatamedia - Al Giza Governorate\n" +
-                    "Quarantine Start Date: 13-4-2020\n" +
-                    "Quarantine End Date: 10-5-2020\n");
+                    .clickable(true)).setTag("اسم المنطقة: المعتمدية - محافظة الجيزة \n" +
+                    "تاريخ بداية العزل: 13-4-2020\n" +
+                    "تاريخ انتهاء العزل: 10-5-2020\n");
 
             //Shobra Elbahow
             googleMap.addPolygon(new PolygonOptions()
@@ -295,9 +295,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             new LatLng(30.96231, 31.353471), new LatLng(30.963856, 31.348804))
                     .strokeColor(Color.RED)
                     .fillColor(Color.LTGRAY)
-                    .clickable(true)).setTag("Area Name: Shobra El-bahow - Al Dakahlia Governorate\n" +
-                    "Quarantine Start Date: 16-4-2020\n" +
-                    "Quarantine End Date: 13-5-2020\n");
+                    .clickable(true)).setTag("اسم المنطقة: شبرا البهو - محافظة الدقهلية\n" +
+                    "تاريخ بداية العزل: 16-4-2020\n" +
+                    "تاريخ انتهاء العزل: 13-5-2020\n");
         }
 
         if(addLabs) {
@@ -326,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Toast.makeText(this, sql.getLocalizedMessage(), Toast.LENGTH_LONG).show();
             }
             if(visitedPlacesList.size() == 0)
-                Toast.makeText(this, "No Patient with ID: " + patientId, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "لا يوجد بيانات مسجلة لهذا الرقم القومي: " + patientId, Toast.LENGTH_LONG).show();
             else{
                 for(int i=0; i<visitedPlacesList.size(); i++)
                 {
@@ -453,15 +453,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void exit()
     {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Are you sure you want to exit?")
+        builder.setMessage("هل تريد غلق التطبيق؟")
                 .setCancelable(false)
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                .setPositiveButton("نعم", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         MainActivity.this.finish();
                         System.exit(0);
                     }
                 })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                .setNegativeButton("لا", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         dialog.cancel();
                     }
@@ -491,7 +491,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
             else {
-                Toast.makeText(this, "Please Add Quarantine Hospitals and Set Your Current Location First", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "من فضلك قم بعرض مستشفيات العزل وتعريف موقعك الجغرافي أولاً", Toast.LENGTH_LONG).show();
             }
 
         } catch (Exception exp) {
@@ -602,7 +602,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMyLocationClick(@NonNull Location location) {
         myLastLocation = location;
         myLocationClicked = true;
-        Toast.makeText(this, "My Location: " + myLastLocation.getLatitude() + ", " + myLastLocation.getLongitude(), Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "موقعي: " + myLastLocation.getLatitude() + ", " + myLastLocation.getLongitude(), Toast.LENGTH_LONG).show();
     }
 
     //----------------------------------------------------------------------------------------------
